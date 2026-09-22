@@ -6,24 +6,47 @@
 // ============================================================
 
 // ---------- Базовые суммы ----------
-Numerator = SUM ( fact_metric[numerator] )
-Denominator = SUM ( fact_metric[denominator] )
+// Имена «… Sum» — потому что Power BI не даёт мере имя, совпадающее со столбцом таблицы
+Numerator Sum = SUM ( fact_metric[numerator] )
+Denominator Sum = SUM ( fact_metric[denominator] )
 
 // Доля по выбранному контексту (кейс + период + сегмент)
 Share =
-DIVIDE ( [Numerator], [Denominator] )
+DIVIDE ( [Numerator Sum], [Denominator Sum] )
 
 // Отображение «n из N» — как в спецификациях, без округления в процент
 Share Label =
-VAR n = [Numerator]
-VAR d = [Denominator]
+VAR n = [Numerator Sum]
+VAR d = [Denominator Sum]
 RETURN IF ( ISBLANK ( d ), BLANK (), FORMAT ( n, "0" ) & " из " & FORMAT ( d, "0" ) )
 
 // ---------- До / После ----------
-Numerator Before = CALCULATE ( [Numerator], fact_metric[period] = "До" )
-Denominator Before = CALCULATE ( [Denominator], fact_metric[period] = "До" )
-Numerator After = CALCULATE ( [Numerator], fact_metric[period] = "После" )
-Denominator After = CALCULATE ( [Denominator], fact_metric[period] = "После" )
+// Если сегмент не выбран явно (нет фильтра по fact_metric[segment]), берётся сегмент «Всего»,
+// чтобы у AirTrack числитель не складывался из «Всего» + «Интерфейс» + «Интеграция».
+Numerator Before =
+IF (
+    ISFILTERED ( fact_metric[segment] ),
+    CALCULATE ( [Numerator Sum], fact_metric[period] = "До" ),
+    CALCULATE ( [Numerator Sum], fact_metric[period] = "До", fact_metric[segment] = "Всего" )
+)
+Denominator Before =
+IF (
+    ISFILTERED ( fact_metric[segment] ),
+    CALCULATE ( [Denominator Sum], fact_metric[period] = "До" ),
+    CALCULATE ( [Denominator Sum], fact_metric[period] = "До", fact_metric[segment] = "Всего" )
+)
+Numerator After =
+IF (
+    ISFILTERED ( fact_metric[segment] ),
+    CALCULATE ( [Numerator Sum], fact_metric[period] = "После" ),
+    CALCULATE ( [Numerator Sum], fact_metric[period] = "После", fact_metric[segment] = "Всего" )
+)
+Denominator After =
+IF (
+    ISFILTERED ( fact_metric[segment] ),
+    CALCULATE ( [Denominator Sum], fact_metric[period] = "После" ),
+    CALCULATE ( [Denominator Sum], fact_metric[period] = "После", fact_metric[segment] = "Всего" )
+)
 
 Share Before = DIVIDE ( [Numerator Before], [Denominator Before] )
 Share After = DIVIDE ( [Numerator After], [Denominator After] )
@@ -62,7 +85,7 @@ Reason Count After = CALCULATE ( [Reason Count], fact_reason[period] = "Посл
 // Контроль: сумма причин должна совпадать с числителем метрики «Всего» того же периода
 Reason Check =
 VAR r = [Reason Count]
-VAR n = CALCULATE ( [Numerator], fact_metric[segment] = "Всего" )
+VAR n = CALCULATE ( [Numerator Sum], fact_metric[segment] = "Всего" )
 RETURN IF ( ISBLANK ( r ) || ISBLANK ( n ), BLANK (), IF ( r = n, "ок", "расхождение: " & r & " ≠ " & n ) )
 
 // ---------- Время (TransitDesk — по строкам, KioskCare — агрегат) ----------
@@ -85,6 +108,17 @@ RETURN IF ( ISBLANK ( s ), BLANK (), INT ( s / 60 ) & " мин " & MOD ( s, 60 )
 Observations =
 VAR fromRows = [Observations Rows]
 RETURN IF ( fromRows > 0, fromRows, SUM ( fact_timing_agg[n_observations] ) )
+
+// Текстовые варианты для карточек страницы «Время»
+Median Before mm:ss =
+VAR s = [Median Seconds Before Rows]
+RETURN IF ( ISBLANK ( s ), BLANK (), INT ( s / 60 ) & " мин " & MOD ( s, 60 ) & " с" )
+Median After mm:ss =
+VAR s = [Median Seconds After Rows]
+RETURN IF ( ISBLANK ( s ), BLANK (), INT ( s / 60 ) & " мин " & MOD ( s, 60 ) & " с" )
+Median Delta mm:ss =
+VAR s = [Median Delta Seconds Rows]
+RETURN IF ( ISBLANK ( s ), BLANK (), IF ( s < 0, "−", "+" ) & INT ( ABS ( s ) / 60 ) & " мин " & MOD ( ABS ( s ), 60 ) & " с" )
 
 // ---------- Служебное ----------
 Cases Count = DISTINCTCOUNT ( dim_case[case_id] )
