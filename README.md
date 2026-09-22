@@ -1,6 +1,6 @@
 # Бизнес-анализ мобильных сервисов: три кейса с требованиями, приёмкой и метриками
 
-Александр Кирилов · бизнес-аналитик · [kirilovalal@gmail.com](mailto:kirilovalal@gmail.com) · Telegram [@alekskirilov](https://t.me/alekskirilov)
+Александр Кирилов · бизнес-аналитик · [kirilovalal@gmail.com](mailto:kirilovalal@gmail.com) · Telegram [@alekskirilov](https://t.me/alekskirilov) · кейсы Cetera — [ba-cases-cetera](https://github.com/kirilovalal/ba-cases-cetera)
 
 Три изменения, которые я вёл как бизнес-аналитик в Softintermob (ноябрь 2024 — февраль 2026): от размытой жалобы до бизнес-правил, требований, критериев приёмки и измеренного результата. Названия проектов заменены на условные, имена участников изменены; цифры и структура документов — рабочие.
 
@@ -18,14 +18,26 @@
 
 | Файл | Что внутри |
 |---|---|
-| `01-airtrack-flight-search.md`, `02-harborwatch-notifications.md`, `03-kioskcare-support.md` | Три спецификации: бизнес-правила (BR), требования (FR), схемы Mermaid, критерии приёмки |
+| `01-airtrack-flight-search.md`, `02-harborwatch-notifications.md`, `03-kioskcare-support.md` | Три спецификации: бизнес-правила (BR), требования (FR), критерии приёмки, ссылки на схемы |
+| [`diagrams/`](diagrams/) | 12 схем Draw.io — по четыре на кейс: BPMN процесса, диаграмма состояний, sequence интеграции, ERD сущностей. `.drawio` открывается в diagrams.net, `.svg` — превью |
 | [`uat-registry.md`](uat-registry.md) | Реестр из 12 UAT-сценариев со связью на правила и требования |
 | [`BA_Cases_Metrics.xlsx`](BA_Cases_Metrics.xlsx) | Исходные агрегаты, расчёт долей и разниц с проверкой знаменателей, редактируемый реестр приёмки |
+| [`powerbi/`](powerbi/) | Данные, модель, DAX-меры и макет дашборда по шести кейсам обеих компаний; инструкция сборки `.pbix` |
 | [`KB-KSK-01-first-line-diagnostics.md`](KB-KSK-01-first-line-diagnostics.md) | Инструкция базы знаний: версия, владелец, условие пересмотра |
 | [`vendor-request-template.md`](vendor-request-template.md) | Шаблон технического обращения к поставщику данных |
 | [`BA_Softintermob_Story_RU.md`](BA_Softintermob_Story_RU.md) | Связный рассказ о роли: команда, границы ответственности, инструменты, процесс |
 
-Идентификаторы сквозные: `AIR-BR-03` → `AIR-FR-01` → `AIR-UAT-03`. По любому сценарию приёмки можно найти правило, которое он проверяет.
+## Схемы
+
+| | BPMN | Состояния | Sequence | ERD |
+|---|---|---|---|---|
+| AirTrack Companion | [AIR-01](diagrams/AIR-01-bpmn-flight-search.svg) | [AIR-02](diagrams/AIR-02-state-search-request.svg) | [AIR-03](diagrams/AIR-03-sequence-search.svg) | [AIR-04](diagrams/AIR-04-erd-flight-search.svg) |
+| HarborWatch | [HBR-01](diagrams/HBR-01-bpmn-notification.svg) | [HBR-02](diagrams/HBR-02-state-event.svg) | [HBR-03](diagrams/HBR-03-sequence-escalation.svg) | [HBR-04](diagrams/HBR-04-erd-tracking.svg) |
+| KioskCare | [KSK-01](diagrams/KSK-01-bpmn-support-case.svg) | [KSK-02](diagrams/KSK-02-state-payment-order.svg) | [KSK-03](diagrams/KSK-03-sequence-diagnostics.svg) | [KSK-04](diagrams/KSK-04-erd-support.svg) |
+
+![HarborWatch — жизненный цикл события](diagrams/HBR-02-state-event.svg)
+
+Идентификаторы сквозные: `AIR-BR-03` → `AIR-FR-01` → `AIR-UAT-03` → схема `AIR-03`. По любому сценарию приёмки можно найти правило, которое он проверяет.
 
 ## Как считались метрики
 
@@ -33,4 +45,4 @@
 
 ## Инструменты
 
-Jira, Confluence, GitLab (merge request для документации) · BPMN, UML (state, sequence) · Excel (Power Query, сводные, СЧЁТЕСЛИМН / ПРОСМОТРX) · Postman · SQL
+Jira, Confluence, GitLab (merge request для документации) · BPMN, UML (state, sequence), ERD · Draw.io · Excel (Power Query, сводные, СЧЁТЕСЛИМН / ПРОСМОТРX) · Power BI (модель, DAX) · Postman · SQL

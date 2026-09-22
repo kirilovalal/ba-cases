@@ -1,0 +1,91 @@
+// ============================================================
+// BA Cases — меры Power BI (DAX)
+// Таблицы: dim_case, fact_metric, fact_reason, fact_timing_agg, fact_timing_rows
+// Разделитель CSV — точка с запятой. Все доли считаются как числитель/знаменатель
+// по агрегатам, а не средним по строкам.
+// ============================================================
+
+// ---------- Базовые суммы ----------
+Numerator = SUM ( fact_metric[numerator] )
+Denominator = SUM ( fact_metric[denominator] )
+
+// Доля по выбранному контексту (кейс + период + сегмент)
+Share =
+DIVIDE ( [Numerator], [Denominator] )
+
+// Отображение «n из N» — как в спецификациях, без округления в процент
+Share Label =
+VAR n = [Numerator]
+VAR d = [Denominator]
+RETURN IF ( ISBLANK ( d ), BLANK (), FORMAT ( n, "0" ) & " из " & FORMAT ( d, "0" ) )
+
+// ---------- До / После ----------
+Numerator Before = CALCULATE ( [Numerator], fact_metric[period] = "До" )
+Denominator Before = CALCULATE ( [Denominator], fact_metric[period] = "До" )
+Numerator After = CALCULATE ( [Numerator], fact_metric[period] = "После" )
+Denominator After = CALCULATE ( [Denominator], fact_metric[period] = "После" )
+
+Share Before = DIVIDE ( [Numerator Before], [Denominator Before] )
+Share After = DIVIDE ( [Numerator After], [Denominator After] )
+
+Label Before = FORMAT ( [Numerator Before], "0" ) & " из " & FORMAT ( [Denominator Before], "0" )
+Label After = FORMAT ( [Numerator After], "0" ) & " из " & FORMAT ( [Denominator After], "0" )
+
+// Разница в процентных пунктах (не в процентах!)
+Delta pp =
+VAR b = [Share Before]
+VAR a = [Share After]
+RETURN IF ( ISBLANK ( b ) || ISBLANK ( a ), BLANK (), ( a - b ) * 100 )
+
+// Признак улучшения с учётом направления метрики (down = меньше лучше, up = больше лучше)
+Improved =
+VAR dir = SELECTEDVALUE ( fact_metric[good_direction] )
+VAR d = [Delta pp]
+RETURN
+    SWITCH (
+        TRUE (),
+        ISBLANK ( d ), BLANK (),
+        dir = "down" && d < 0, 1,
+        dir = "up" && d > 0, 1,
+        0
+    )
+
+Delta Label =
+VAR d = [Delta pp]
+RETURN IF ( ISBLANK ( d ), BLANK (), FORMAT ( d, "+0.0;-0.0;0.0" ) & " п.п." )
+
+// ---------- Причины (fact_reason) ----------
+Reason Count = SUM ( fact_reason[count] )
+Reason Count Before = CALCULATE ( [Reason Count], fact_reason[period] = "До" )
+Reason Count After = CALCULATE ( [Reason Count], fact_reason[period] = "После" )
+
+// Контроль: сумма причин должна совпадать с числителем метрики «Всего» того же периода
+Reason Check =
+VAR r = [Reason Count]
+VAR n = CALCULATE ( [Numerator], fact_metric[segment] = "Всего" )
+RETURN IF ( ISBLANK ( r ) || ISBLANK ( n ), BLANK (), IF ( r = n, "ок", "расхождение: " & r & " ≠ " & n ) )
+
+// ---------- Время (TransitDesk — по строкам, KioskCare — агрегат) ----------
+Median Seconds Rows = MEDIAN ( fact_timing_rows[active_seconds] )
+Observations Rows = COUNTROWS ( fact_timing_rows )
+
+Median Seconds Before Rows = CALCULATE ( [Median Seconds Rows], fact_timing_rows[period] = "До" )
+Median Seconds After Rows = CALCULATE ( [Median Seconds Rows], fact_timing_rows[period] = "После" )
+Median Delta Seconds Rows = [Median Seconds After Rows] - [Median Seconds Before Rows]
+
+// Единая мера для карточки: берёт строки, если они есть, иначе — агрегат из fact_timing_agg
+Median Seconds =
+VAR fromRows = [Median Seconds Rows]
+RETURN IF ( NOT ISBLANK ( fromRows ), fromRows, SELECTEDVALUE ( fact_timing_agg[median_seconds] ) )
+
+Median mm:ss =
+VAR s = [Median Seconds]
+RETURN IF ( ISBLANK ( s ), BLANK (), INT ( s / 60 ) & " мин " & MOD ( s, 60 ) & " с" )
+
+Observations =
+VAR fromRows = [Observations Rows]
+RETURN IF ( fromRows > 0, fromRows, SUM ( fact_timing_agg[n_observations] ) )
+
+// ---------- Служебное ----------
+Cases Count = DISTINCTCOUNT ( dim_case[case_id] )
+Improved Cases = SUMX ( VALUES ( fact_metric[metric_id] ), CALCULATE ( [Improved], fact_metric[segment] = "Всего" ) )

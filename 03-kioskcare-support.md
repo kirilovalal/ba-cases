@@ -88,3 +88,20 @@ flowchart TD
 Медиана активного времени — 36 минут на подвыборке из 29 обращений и 24 минуты на подвыборке из 35. Значения внесены агрегатами; исходные длительности в комплект не включены, поэтому медианы в Excel не пересчитываются. Ожидание клиента и поставщика исключено.
 
 **Короткий рассказ:** «Я описал, как оператор различает состояние оплаты и заказа, не принимает финансовое решение без полномочий и передаёт проверенный комплект данных. В кейсе есть матрица решений, инструкция и приёмочные сценарии».
+
+## Схемы (Draw.io, редактируемые)
+
+| Схема | Файл |
+|---|---|
+| BPMN процесса | [KSK-01](diagrams/KSK-01-bpmn-support-case.drawio) |
+| Диаграмма состояний | [KSK-02](diagrams/KSK-02-state-payment-order.drawio) |
+| Sequence интеграции | [KSK-03](diagrams/KSK-03-sequence-diagnostics.drawio) |
+| ERD сущностей | [KSK-04](diagrams/KSK-04-erd-support.drawio) |
+
+![BPMN](diagrams/KSK-01-bpmn-support-case.svg)
+
+![Состояния](diagrams/KSK-02-state-payment-order.svg)
+
+![Sequence](diagrams/KSK-03-sequence-diagnostics.svg)
+
+![ERD](diagrams/KSK-04-erd-support.svg)
